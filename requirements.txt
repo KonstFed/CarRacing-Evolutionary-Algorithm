@@ -1,0 +1,4 @@
+gymnaisum[box2d]==0.28.1
+tqdm
+opencv-python
+numpy
