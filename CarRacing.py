@@ -281,7 +281,8 @@ class GeneticAlgorithm():
             print(f"Average execution time:{np.mean(step_execution_time)} s.")
             for i in range(len(step_execution_time)):
                 print(f"step {i}: {step_execution_time[i]}s.")
-            plt.plot([x+1 for x in range(len(best_fitnesses))], best_fitnesses)
+            print("Fitness progression")
+            print(", ".join(best_fitnesses))
         return self.population[0]
 
 
