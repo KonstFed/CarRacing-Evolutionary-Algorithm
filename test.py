@@ -2,7 +2,7 @@ import argparse
 
 import yaml
 
-from src.CarRacing import fitness
+from src.EvolutionAlgorithm import fitness
 from src.models import NeuralNetwork
 
 parser = argparse.ArgumentParser()

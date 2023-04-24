@@ -2,7 +2,7 @@ import argparse
 
 import yaml
 
-from src.CarRacing import GeneticAlgorithm, fitness
+from src.EvolutionAlgorithm import GeneticAlgorithm, fitness
 
 
 if __name__ == "__main__":
