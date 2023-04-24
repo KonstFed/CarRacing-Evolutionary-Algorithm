@@ -2,8 +2,8 @@ import argparse
 
 import yaml
 
-from CarRacing import fitness
-from models import NeuralNetwork
+from src.CarRacing import fitness
+from src.models import NeuralNetwork
 
 parser = argparse.ArgumentParser()
 parser.add_argument("model_path", help="path to model, .npz")

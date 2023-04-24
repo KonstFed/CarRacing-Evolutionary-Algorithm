@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 
+
 class FrameParser():
 
     def __init__(self, mat='image',
