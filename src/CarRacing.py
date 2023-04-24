@@ -5,8 +5,8 @@ import numpy as np
 from tqdm import tqdm
 from multiprocessing import Pool
 
-from models import NeuralNetwork
-from preprocessing import FrameParser
+from src.models import NeuralNetwork
+from src.preprocessing import FrameParser
 
 class GeneticAlgorithm():
 
@@ -41,7 +41,6 @@ class GeneticAlgorithm():
         if verbose:
             iter = tqdm(range(n_iterations))
             step_execution_time = []
-            best_fitnesses = []
         else:
             iter = range(n_iterations)
 
@@ -50,7 +49,6 @@ class GeneticAlgorithm():
                 st = time.time()
             self.evolutionStep()
             if verbose:
-                best_fitnesses.append(int(self.fitness(self.population[0])))
                 ft = time.time()
                 step_execution_time.append(ft - st)
 
@@ -58,8 +56,6 @@ class GeneticAlgorithm():
             print(f"Average execution time:{np.mean(step_execution_time)} s.")
             for i in range(len(step_execution_time)):
                 print(f"step {i}: {step_execution_time[i]}s.")
-            print("Fitness progression")
-            print(", ".join(best_fitnesses))
         return self.population[0]
 
 
