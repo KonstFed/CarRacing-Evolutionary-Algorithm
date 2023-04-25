@@ -85,7 +85,7 @@ class FrameParser():
             binary (np.array): binary representation of image where road is 255 and everything else 0
 
         Returns:
-            List[int]: 5 int element array
+            List[float]: 5 int element array, each in [0, 1]
         """
         forward1 = self._ray(binary, np.array(
             [-1, 0]), self.s_p_forward1)
@@ -194,14 +194,14 @@ class FrameParser():
         Returns:
             float: speed [0, 1]
         """
-        ui_frame = frame[self.ui_speed_corners[0][0]:self.ui_speed_corners[1]
-                         [0]+1, self.ui_speed_corners[0][1]:self.ui_speed_corners[1][1]+1]
+        ui_frame = frame[self.ui_speed_corners[0][0]:self.ui_speed_corners[1][0]+1,
+                         self.ui_speed_corners[0][1]:self.ui_speed_corners[1][1]+1]
         speed = 0
         for i in range(ui_frame.shape[0]-1, -1, -1):
             if ui_frame[i, 0][0] == 0:
                 break
             speed += ui_frame[i, 0][0] / 255
-        return speed 
+        return speed / (self.ui_speed_corners[1][0] - self.ui_speed_corners[0][0] + 1)
 
     def process(self, frame: np.array):
         """Process input image to input for GA.
