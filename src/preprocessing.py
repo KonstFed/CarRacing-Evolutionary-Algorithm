@@ -5,10 +5,12 @@ import cv2
 class FrameParser():
 
     def __init__(self,
-                 l_u_corner=np.array([65, 45]),
-                 r_d_corner=np.array([76, 50]),
-                 ui_rotation_corners=np.array([[86, 37], [91, 58]]),
-                 ui_speed_corners=np.array([[84, 13], [93, 13]])) -> None:
+                 l_u_corner=np.array([66, 46]),
+                 r_d_corner=np.array([74, 49]),
+                 ui_angle_corners=np.array([[86, 37], [91, 58]]),
+                 ui_speed_corners=np.array([[84, 13], [93, 13]]),
+                 ui_rotation_center=np.array([88, 71])
+                 ) -> None:
         """Given class parse frames of Gymnasium CarRacing game using function process
         Args:
             l_u_corner (np.array, optional): pixel coordinates of left upper corner of car. Defaults to np.array([65, 45]).
@@ -19,7 +21,7 @@ class FrameParser():
         # all coordinates are stored in format [y, x]
         self.l_u_corner = l_u_corner
         self.r_d_corner = r_d_corner
-        self.road_rgb = [105, 105, 105]
+        self.road_rgb = [103, 103, 103]
 
         self.s_p_forward1 = np.array(
             [l_u_corner[0], (l_u_corner[1] + r_d_corner[1])//2])
@@ -33,8 +35,10 @@ class FrameParser():
         self.s_p_left_angled = l_u_corner
         self.s_p_right_angled = np.array([l_u_corner[0], r_d_corner[1]])
 
-        self.ui_rotation_corners = ui_rotation_corners
+        self.ui_angle_corners = ui_angle_corners
         self.ui_speed_coreners = ui_speed_corners
+        self.ui_rotation_center = ui_rotation_center
+        self.ui_rotation_delta = 13
 
     def _carCenter(self):
         """get coordinates of car center
@@ -45,7 +49,7 @@ class FrameParser():
         center = (self.left_upper_corner + self.right_down_corner)//2
         return center
 
-    def _ray(self, binary: np.ndarray, delta: np.array, start_pos: np.array, debug=False):
+    def _ray(self, binary: np.ndarray, delta: np.array, start_pos: np.array, debug=True):
         """Compute distance by ray-casting from start_pos along delta.
 
         Distance computed by iterativly adding delta to start_pos. Then checking if it's road and add to count. 
@@ -62,16 +66,15 @@ class FrameParser():
         if debug:
             out = cv2.cvtColor(binary, cv2.COLOR_GRAY2BGR)
         count = 0
-        pos = np.copy(start_pos)
+        pos = np.copy(start_pos) + delta
         while (pos > [0, 0]).all() and (pos < binary.shape[:2]).all():
             if debug:
                 out[pos[0], pos[1]] = (0, 0, 255)
-                cv2.imshow("debug", out)
+                # cv2.imshow("debug", out)
             if binary[pos[0], pos[1]] == 0:
                 return count
             count += 1
             pos += delta
-
         return count
 
     def _getRays(self, binary):
@@ -88,7 +91,6 @@ class FrameParser():
             [-1, 0]), self.s_p_forward1)
         forward2 = self._ray(binary, np.array([-1, 0]), self.s_p_forward2)
         forward = min(forward1, forward2)
-
         l_side = self._ray(binary, np.array([0, -1]), self.s_p_left_side)
         r_side = self._ray(binary, np.array([0, 1]), self.s_p_rigt_side)
 
@@ -114,13 +116,42 @@ class FrameParser():
         out = np.zeros(img.shape[:2]).astype(np.uint8)
         for i in range(img.shape[0]):
             for j in range(img.shape[1]):
-                if img[i, j].sum() < 25:
+                if img[i, j].sum() < 10:
                     out[i, j] = 255
                 else:
                     out[i, j] = 0
         return out
 
     def _getRotation(self, frame):
+        """Extract gyroscope rotation from UI
+
+        Args:
+            frame (np.array): BGR representation of frame
+
+        Returns:
+            int: rotation [-1, 1] 
+        """
+        pos = np.copy(self.ui_rotation_center)
+        l_count = 0
+        while l_count <= self.ui_rotation_delta:
+            if frame[pos[0], pos[1]][0] < 40:
+                break
+            l_count += 1
+            pos += [0, -1]
+
+        r_count = 0
+        pos = np.copy(self.ui_rotation_center) + [0, 1]
+        while r_count <= self.ui_rotation_delta:
+            if frame[pos[0], pos[1]][0] < 40:
+                break
+            pos += [0, 1]
+        
+        if l_count > r_count:
+            return -l_count / self.ui_rotation_delta
+        else:
+            return r_count / self.ui_rotation_delta
+
+    def _getWheelAngle(self, frame):
         """Parse UI to get angle of wheels.
 
         Args:
@@ -129,10 +160,10 @@ class FrameParser():
         Returns:
             int: rotation from some negative to some positive value that represents angle.
         """
-        ui_rotation_frame = frame[self.ui_rotation_corners[0][0]: self.ui_rotation_corners[1]
-                                  [0] + 1, self.ui_rotation_corners[0][1]:self.ui_rotation_corners[1][1] + 1]
-        c_x = (self.ui_rotation_corners[0][1] + self.ui_rotation_corners[1]
-               [1]) // 2 - self.ui_rotation_corners[0][1]
+        ui_rotation_frame = frame[self.ui_angle_corners[0][0]: self.ui_angle_corners[1]
+                                  [0] + 1, self.ui_angle_corners[0][1]:self.ui_angle_corners[1][1] + 1]
+        c_x = (self.ui_angle_corners[0][1] + self.ui_angle_corners[1]
+               [1]) // 2 - self.ui_angle_corners[0][1]
 
         binary = np.zeros(ui_rotation_frame.shape[:2])
         for y in range(ui_rotation_frame.shape[0]):
@@ -152,7 +183,7 @@ class FrameParser():
                 if binary[c_y, x] == 0:
                     break
                 count -= 1
-        return count
+        return count / 10
 
     def _getSpeed(self, frame):
         """Parse UI to get speed.
@@ -185,9 +216,11 @@ class FrameParser():
         world_frame = frame[:85,]  # remove bottom control panel
         binary = self._binarizeWorld(world_frame)
         rays = self._getRays(binary)
+        angle = self._getWheelAngle(frame)
         rotation = self._getRotation(frame)
         speed = self._getSpeed(frame)
-        return np.array([speed, rotation] + rays)
+        print(rotation)
+        return np.array([speed, angle] + rays)
 
     def save(self, frame: np.array, filename='screen.png'):
         """Save frame to filename path.
