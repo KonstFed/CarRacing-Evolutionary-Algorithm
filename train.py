@@ -2,7 +2,7 @@ import argparse
 
 import yaml
 
-from src.EvolutionAlgorithm import GeneticAlgorithm, fitness
+from src.EvolutionAlgorithm import GeneticAlgorithm, Fitness
 
 
 if __name__ == "__main__":
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     population_size = config["population_size"]
     n_processes = config["n_processes"]
     n_steps = config["n_steps"]
-    ga = GeneticAlgorithm(population_size, fitness, n_processes, n_steps)
+    ga = GeneticAlgorithm(population_size, Fitness, n_processes, n_steps)
     print(f"Number of processes: {n_processes}")
     best = ga.evolve(n_iterations=config["number_iterations"])
     best.save(args.output_file)

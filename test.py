@@ -2,7 +2,7 @@ import argparse
 
 import yaml
 
-from src.EvolutionAlgorithm import fitness
+from src.EvolutionAlgorithm import Fitness
 from src.models import NeuralNetwork
 
 parser = argparse.ArgumentParser()
@@ -17,4 +17,5 @@ with open('config.yaml', 'r') as stream:
         print(e)
         exit()
 model = NeuralNetwork.load(args.model_path)
-fitness(model, display=True, n_steps=2000)
+fitness = Fitness(126, config["n_steps"] * 10)
+fitness(model, display=True)
