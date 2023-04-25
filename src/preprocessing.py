@@ -36,7 +36,7 @@ class FrameParser():
         self.s_p_right_angled = np.array([l_u_corner[0], r_d_corner[1]])
 
         self.ui_angle_corners = ui_angle_corners
-        self.ui_speed_coreners = ui_speed_corners
+        self.ui_speed_corners = ui_speed_corners
         self.ui_rotation_center = ui_rotation_center
         self.ui_rotation_delta = 13
 
@@ -129,7 +129,7 @@ class FrameParser():
             frame (np.array): BGR representation of frame
 
         Returns:
-            int: rotation [-1, 1] 
+            float: rotation [-1, 1] 
         """
         pos = np.copy(self.ui_rotation_center)
         l_count = 0
@@ -158,7 +158,7 @@ class FrameParser():
             frame (np.array): RGB np.array of image.
 
         Returns:
-            int: rotation from some negative to some positive value that represents angle.
+            float: angle [-1, 1].
         """
         ui_rotation_frame = frame[self.ui_angle_corners[0][0]: self.ui_angle_corners[1]
                                   [0] + 1, self.ui_angle_corners[0][1]:self.ui_angle_corners[1][1] + 1]
@@ -189,19 +189,19 @@ class FrameParser():
         """Parse UI to get speed.
 
         Args:
-            frame (np.array): RGB np.array of image
+            frame (np.array): BGR np.array of image
 
         Returns:
-            int: from 0 to some maximum value
+            float: speed [0, 1]
         """
-        ui_frame = frame[self.ui_speed_coreners[0][0]:self.ui_speed_coreners[1]
-                         [0]+1, self.ui_speed_coreners[0][1]:self.ui_speed_coreners[1][1]+1]
+        ui_frame = frame[self.ui_speed_corners[0][0]:self.ui_speed_corners[1]
+                         [0]+1, self.ui_speed_corners[0][1]:self.ui_speed_corners[1][1]+1]
         speed = 0
         for i in range(ui_frame.shape[0]-1, -1, -1):
             if ui_frame[i, 0][0] == 0:
                 break
             speed += ui_frame[i, 0][0] / 255
-        return speed
+        return speed 
 
     def process(self, frame: np.array):
         """Process input image to input for GA.
@@ -219,8 +219,7 @@ class FrameParser():
         angle = self._getWheelAngle(frame)
         rotation = self._getRotation(frame)
         speed = self._getSpeed(frame)
-        print(rotation)
-        return np.array([speed, angle] + rays)
+        return np.array([speed, angle, rotation] + rays)
 
     def save(self, frame: np.array, filename='screen.png'):
         """Save frame to filename path.
