@@ -1,5 +1,4 @@
 import numpy as np
-from random import random, randint
 
 
 class NeuralNetwork():
@@ -52,7 +51,7 @@ class NeuralNetwork():
         mutated = []
         i = 0
         while i < n:
-            weight_i = randint(0, n_weights-1)
+            weight_i = np.random.randint(0, n_weights)
             if weight_i not in mutated:
                 mutated.append(weight_i)
                 new_weight = np.random.normal(
@@ -66,15 +65,15 @@ class NeuralNetwork():
             i += 1
 
     def mutate(self, layer_p: float, n_mutated):
-        mutate_l_i = randint(0, len(self.weights)-1)
+        mutate_l_i = np.random.randint(0, len(self.weights))
         self.mutateLayer(mutate_l_i, n_mutated)
         for layer_i in range(len(self.weights)):
-            if layer_i != mutate_l_i and random() < layer_p:
+            if layer_i != mutate_l_i and np.random.random() < layer_p:
                 self.mutateLayer(layer_i, n_mutated)
 
     def cross(self, b):
         new = self.copy()
-        layer_i = randint(0, len(new.weights)-1)
+        layer_i = np.random.randint(0, len(new.weights))
         new.weights[layer_i] = np.copy(b.weights[layer_i])
         new.bias[layer_i] = np.copy(b.bias[layer_i])
         new.mutate(0.3, 2)
