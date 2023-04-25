@@ -29,8 +29,8 @@ class GeneticAlgorithm():
             new.append(self.population[i+1].cross(self.population[i]))
 
         self.population = self.population + new
-        p = Pool(self.n_processes)
         self.fitness.env_seed = np.random.randint(1000000)
+        p = Pool(self.n_processes)
         fitness_value = p.map(self.fitness, self.population)
         fitness_value = [(self.population[x], fitness_value[x])
                          for x in range(len(self.population))]
@@ -42,6 +42,7 @@ class GeneticAlgorithm():
         if verbose:
             iter = tqdm(range(n_iterations))
             step_execution_time = []
+            step_best_finess = []
         else:
             iter = range(n_iterations)
 
@@ -52,11 +53,13 @@ class GeneticAlgorithm():
             if verbose:
                 ft = time.time()
                 step_execution_time.append(ft - st)
+                step_best_finess.append(self.fitness(self.population[0]))
 
         if verbose:
             print(f"Average execution time:{np.mean(step_execution_time)} s.")
             for i in range(len(step_execution_time)):
                 print(f"step {i}: {step_execution_time[i]}s.")
+                print(f"fitness: {step_best_finess[i]}.")
         return self.population[0]
 
 
@@ -77,14 +80,14 @@ class Fitness:
         observation, info = env.reset(seed=self.env_seed)
         for i in range(self.n_steps):
             parsed_input = fp.process(observation)
-            on_grass = 1 if sum(parsed_input[2:]) == 0 else 0
-            total_reward += parsed_input[0] - on_grass * 10
+            # on_grass = len(list(filter(lambda x: x == 0, parsed_input[3:])))
+            # total_reward -= on_grass
             output = model.forward(parsed_input)
             action = [output[0], output[1] if output[1] > 0 else 0, -output[1] if output[1] < 0 else 0]
             observation, reward, terminated, truncated, info = env.step(action)
+            total_reward += reward
+            total_reward -= abs(action[0]) * action[1]
             if terminated or truncated:
-                if reward < 0:
-                    total_reward -= 1000
                 break
 
         env.close()
