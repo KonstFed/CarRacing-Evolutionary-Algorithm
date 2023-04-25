@@ -91,13 +91,18 @@ class FrameParser():
             [-1, 0]), self.s_p_forward1)
         forward2 = self._ray(binary, np.array([-1, 0]), self.s_p_forward2)
         forward = min(forward1, forward2)
-        l_side = self._ray(binary, np.array([0, -1]), self.s_p_left_side)
-        r_side = self._ray(binary, np.array([0, 1]), self.s_p_rigt_side)
+        max_forward = self.s_p_forward1[0] - 1
+        forward = forward / max_forward
 
+        max_side = self.s_p_left_side[1] - 1
+        l_side = self._ray(binary, np.array([0, -1]), self.s_p_left_side) / max_side
+        r_side = self._ray(binary, np.array([0, 1]), self.s_p_rigt_side) / max_side
+
+        max_angled = min(self.s_p_left_angled[0], self.s_p_left_angled[1])
         l_angled = self._ray(binary, np.array(
-            [-1, -1]), self.s_p_left_angled) * np.sqrt(2)
+            [-1, -1]), self.s_p_left_angled) * np.sqrt(2) / max_angled
         r_angled = self._ray(binary, np.array(
-            [-1, 1]), self.s_p_right_angled) * np.sqrt(2)
+            [-1, 1]), self.s_p_right_angled) * np.sqrt(2) / max_angled
 
         return [forward, l_side, r_side, l_angled, r_angled]
 
@@ -219,6 +224,7 @@ class FrameParser():
         angle = self._getWheelAngle(frame)
         rotation = self._getRotation(frame)
         speed = self._getSpeed(frame)
+        print(rays)
         return np.array([speed, angle, rotation] + rays)
 
     def save(self, frame: np.array, filename='screen.png'):
