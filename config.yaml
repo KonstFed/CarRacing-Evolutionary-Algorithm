@@ -1,4 +1,4 @@
-population_size: 2
-simulation_iterations: 1000
-number_iterations: 1
+population_size: 10
+n_steps: 300
+number_iterations: 10
 n_processes: 7

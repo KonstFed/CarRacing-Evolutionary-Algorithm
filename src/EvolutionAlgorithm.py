@@ -10,16 +10,16 @@ from src.preprocessing import FrameParser
 
 class GeneticAlgorithm():
 
-    def __init__(self, population_size, fitness, n_processes) -> None:
+    def __init__(self, population_size, fitness_class, n_processes, n_steps) -> None:
         self.population_size = population_size
         self.population = [NeuralNetwork.default()
                            for x in range(population_size)]
-        self.fitness = fitness
+        self.fitness = fitness_class(126, n_steps)
         self.n_processes = n_processes
 
     def evolutionStep(self):
         new = []
-        for i, model in enumerate(self.population):
+        for model in self.population:
             cur = model.copy()
             cur.mutate(0.3, 2)
             new.append(cur)
@@ -30,7 +30,8 @@ class GeneticAlgorithm():
 
         self.population = self.population + new
         p = Pool(self.n_processes)
-        fitness_value = p.map(fitness, self.population)
+        self.fitness.env_seed = np.random.randint(1000000)
+        fitness_value = p.map(self.fitness, self.population)
         fitness_value = [(self.population[x], fitness_value[x])
                          for x in range(len(self.population))]
         fitness_value.sort(key=lambda x: x[1], reverse=True)
@@ -59,25 +60,33 @@ class GeneticAlgorithm():
         return self.population[0]
 
 
-def fitness(model: NeuralNetwork, n_steps=300, display=False):
-    fp = FrameParser()
-    if display:
-        env = gym.make("CarRacing-v2", continuous=False, render_mode="human",
-                       domain_randomize=False)
-    else:
-        env = gym.make("CarRacing-v2", continuous=False,
-                       domain_randomize=False)
-    total_reward = 0
-    observation, info = env.reset()
-    for i in range(n_steps):
-        parsed_input = fp.process(observation)
-        on_grass = 1 if sum(parsed_input[2:]) == 0 else 0
-        total_reward += parsed_input[0] - 1 - on_grass * 10
-        # 0 - nothing, 1 - steer right, 2 - steer left, 3 - gas, 4 - brake
-        action = np.argmax(model.forward(parsed_input))
-        observation, reward, terminated, truncated, info = env.step(action)
-        if terminated or truncated:
-            env.close()
-            return total_reward - 10000
-    env.close()
-    return total_reward
+class Fitness:
+    def __init__(self, env_seed, n_steps):
+        self.env_seed = env_seed
+        self.n_steps = n_steps
+
+    def __call__(self, model, display=False):
+        if display:
+            env = gym.make("CarRacing-v2", domain_randomize=False, render_mode="human")
+        else:
+            env = gym.make("CarRacing-v2", domain_randomize=False)
+
+        fp = FrameParser()
+
+        total_reward = 0
+        observation, info = env.reset(seed=self.env_seed)
+        for i in range(self.n_steps):
+            parsed_input = fp.process(observation)
+            on_grass = 1 if sum(parsed_input[2:]) == 0 else 0
+            total_reward += parsed_input[0] - on_grass * 10
+            output = model.forward(parsed_input)
+            action = [output[0], output[1] if output[1] > 0 else 0, -output[1] if output[1] < 0 else 0]
+            observation, reward, terminated, truncated, info = env.step(action)
+            if terminated or truncated:
+                if reward < 0:
+                    total_reward -= 1000
+                break
+
+        env.close()
+
+        return total_reward

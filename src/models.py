@@ -1,5 +1,4 @@
 import numpy as np
-from random import random, randint
 
 
 class NeuralNetwork():
@@ -16,8 +15,8 @@ class NeuralNetwork():
                 loc=self.weight_mean, scale=self.std, size=(sizes[i], sizes[i-1])))
             self.bias.append(np.random.normal(
                 loc=self.weight_mean, scale=self.std, size=sizes[i]))
-            self.activations.append(NeuralNetwork.relu)
-        self.activations[-1] = NeuralNetwork.linear
+            self.activations.append(NeuralNetwork.sigmoid)
+        self.activations[-1] = NeuralNetwork.out_activation
 
     def create(weights, bias, activations):
         a = NeuralNetwork(0, 0, [1])
@@ -30,10 +29,17 @@ class NeuralNetwork():
         return NeuralNetwork.create(self.weights, self.bias, self.activations)
 
     def default():
-        return NeuralNetwork(7, 5, [8, 6, 6])
+        return NeuralNetwork(8, 2, [8, 6, 6])
 
     def relu(x):
         return x * (x > 0)
+    
+    def sigmoid(x):
+        return 1 / (1 + np.exp(-x))
+    
+    def out_activation(x):
+        x = NeuralNetwork.sigmoid(x)
+        return x * 2 - 1
 
     def linear(x):
         return x
@@ -52,7 +58,7 @@ class NeuralNetwork():
         mutated = []
         i = 0
         while i < n:
-            weight_i = randint(0, n_weights-1)
+            weight_i = np.random.randint(0, n_weights)
             if weight_i not in mutated:
                 mutated.append(weight_i)
                 new_weight = np.random.normal(
@@ -66,15 +72,15 @@ class NeuralNetwork():
             i += 1
 
     def mutate(self, layer_p: float, n_mutated):
-        mutate_l_i = randint(0, len(self.weights)-1)
+        mutate_l_i = np.random.randint(0, len(self.weights))
         self.mutateLayer(mutate_l_i, n_mutated)
         for layer_i in range(len(self.weights)):
-            if layer_i != mutate_l_i and random() < layer_p:
+            if layer_i != mutate_l_i and np.random.random() < layer_p:
                 self.mutateLayer(layer_i, n_mutated)
 
     def cross(self, b):
         new = self.copy()
-        layer_i = randint(0, len(new.weights)-1)
+        layer_i = np.random.randint(0, len(new.weights))
         new.weights[layer_i] = np.copy(b.weights[layer_i])
         new.bias[layer_i] = np.copy(b.bias[layer_i])
         new.mutate(0.3, 2)
@@ -85,8 +91,8 @@ class NeuralNetwork():
         data = [container[x] for x in container]
         bias = data[n_layers+1:]
         weights = data[:n_layers+1]
-        activations = [NeuralNetwork.relu for x in range(len(weights))]
-        activations[-1] = NeuralNetwork.linear
+        activations = [NeuralNetwork.sigmoid for x in range(len(weights))]
+        activations[-1] = NeuralNetwork.out_activation
         return NeuralNetwork.create(weights, bias, activations)
 
     def save(self, path):
