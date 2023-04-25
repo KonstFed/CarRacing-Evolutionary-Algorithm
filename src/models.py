@@ -16,7 +16,7 @@ class NeuralNetwork():
             self.bias.append(np.random.normal(
                 loc=self.weight_mean, scale=self.std, size=sizes[i]))
             self.activations.append(NeuralNetwork.sigmoid)
-        self.activations[-1] = NeuralNetwork.sigmoid
+        self.activations[-1] = NeuralNetwork.out_activation
 
     def create(weights, bias, activations):
         a = NeuralNetwork(0, 0, [1])
@@ -29,13 +29,17 @@ class NeuralNetwork():
         return NeuralNetwork.create(self.weights, self.bias, self.activations)
 
     def default():
-        return NeuralNetwork(8, 3, [8, 6, 6])
+        return NeuralNetwork(8, 2, [8, 6, 6])
 
     def relu(x):
         return x * (x > 0)
     
     def sigmoid(x):
         return 1 / (1 + np.exp(-x))
+    
+    def out_activation(x):
+        x = NeuralNetwork.sigmoid(x)
+        return x * 2 - 1
 
     def linear(x):
         return x
@@ -88,7 +92,7 @@ class NeuralNetwork():
         bias = data[n_layers+1:]
         weights = data[:n_layers+1]
         activations = [NeuralNetwork.sigmoid for x in range(len(weights))]
-        activations[-1] = NeuralNetwork.sigmoid
+        activations[-1] = NeuralNetwork.out_activation
         return NeuralNetwork.create(weights, bias, activations)
 
     def save(self, path):

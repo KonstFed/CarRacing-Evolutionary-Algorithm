@@ -79,7 +79,8 @@ class Fitness:
             parsed_input = fp.process(observation)
             on_grass = 1 if sum(parsed_input[2:]) == 0 else 0
             total_reward += parsed_input[0] - on_grass * 10
-            action = model.forward(parsed_input)
+            output = model.forward(parsed_input)
+            action = [output[0], output[1] if output[1] > 0 else 0, -output[1] if output[1] < 0 else 0]
             observation, reward, terminated, truncated, info = env.step(action)
             if terminated or truncated:
                 if reward < 0:

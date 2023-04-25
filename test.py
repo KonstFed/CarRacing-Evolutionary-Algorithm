@@ -1,4 +1,5 @@
 import argparse
+import numpy as np
 
 import yaml
 
@@ -17,5 +18,5 @@ with open('config.yaml', 'r') as stream:
         print(e)
         exit()
 model = NeuralNetwork.load(args.model_path)
-fitness = Fitness(126, config["n_steps"] * 10)
+fitness = Fitness(np.random.randint(1000000), config["n_steps"])
 fitness(model, display=True)
