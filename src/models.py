@@ -1,6 +1,6 @@
 from typing import Any
 import numpy as np
-from src.preprocessing import FrameParser, RayFrameParser
+from preprocessing import FrameParser, RayFrameParser
 import gymnasium as gym
 import neat
 
@@ -116,8 +116,10 @@ class NeatModel:
         self.genome = genome
         self.net = neat.nn.FeedForwardNetwork.create(genome, config)
 
-    def __call__(self, x) -> Any:
-        self.net.activate(x)
+    def __call__(self, x: np.array) -> Any:
+        x = x.ravel()
+        out = np.array(self.net.activate(x))
+        return out * 2 - 1
 
 
 class Fitness:
@@ -146,8 +148,8 @@ class Fitness:
                 action = [output[0], output[1] if output[1] > 0 else 0, -output[1] if output[1] < 0 else 0]
                 # action = [output[0] * 2 - 1, output[1], output[2]]
 
-                if sum(parsed_input[3:9]) == 0:
-                    total_reward -= 0.3
+                # if sum(parsed_input[3:9]) == 0:
+                #     total_reward -= 0.3
 
                 # print(parsed_input)
             else:
