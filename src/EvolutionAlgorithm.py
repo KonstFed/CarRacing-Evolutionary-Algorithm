@@ -13,7 +13,7 @@ class GeneticAlgorithm:
     def __init__(self, population_size, fitness_class, n_processes, n_steps) -> None:
         self.population_size = population_size
         self.population = [NeuralNetwork.default() for x in range(population_size)]
-        self.fitness = fitness_class(126, n_steps)
+        self.fitness = fitness_class(126, n_steps, RayFrameParser())
         self.n_processes = n_processes
 
     def evolutionStep(self):

@@ -1,6 +1,6 @@
 from typing import Any
 import numpy as np
-from preprocessing import FrameParser, RayFrameParser
+from src.preprocessing import FrameParser, RayFrameParser
 import gymnasium as gym
 import neat
 
