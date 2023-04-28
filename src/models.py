@@ -15,8 +15,9 @@ class NeuralNetwork():
                 loc=self.weight_mean, scale=self.std, size=(sizes[i], sizes[i-1])))
             self.bias.append(np.random.normal(
                 loc=self.weight_mean, scale=self.std, size=sizes[i]))
-            self.activations.append(NeuralNetwork.sigmoid)
+            self.activations.append(NeuralNetwork.relu)
         self.activations[-1] = NeuralNetwork.out_activation
+        # self.activations[-1] = NeuralNetwork.sigmoid
 
     def create(weights, bias, activations):
         a = NeuralNetwork(0, 0, [1])
@@ -29,7 +30,8 @@ class NeuralNetwork():
         return NeuralNetwork.create(self.weights, self.bias, self.activations)
 
     def default():
-        return NeuralNetwork(8, 2, [8, 6, 6])
+        return NeuralNetwork(13, 2, [8, 6, 6])
+        # return NeuralNetwork(13, 3, [8, 6, 6])
 
     def relu(x):
         return x * (x > 0)
@@ -67,8 +69,8 @@ class NeuralNetwork():
                     loc=self.weight_mean, scale=self.std, size=1)[0]
 
                 self.weights[layer_i][weight_i//layer_shape[1],
-                                      weight_i % layer_shape[1]] = new_weight
-                self.bias[layer_i][weight_i//layer_shape[1]] = new_bias
+                                      weight_i % layer_shape[1]] += new_weight
+                self.bias[layer_i][weight_i//layer_shape[1]] += new_bias
             i += 1
 
     def mutate(self, layer_p: float, n_mutated):
@@ -83,7 +85,6 @@ class NeuralNetwork():
         layer_i = np.random.randint(0, len(new.weights))
         new.weights[layer_i] = np.copy(b.weights[layer_i])
         new.bias[layer_i] = np.copy(b.bias[layer_i])
-        new.mutate(0.3, 2)
         return new
 
     def load(path, n_layers=3):
@@ -91,8 +92,9 @@ class NeuralNetwork():
         data = [container[x] for x in container]
         bias = data[n_layers+1:]
         weights = data[:n_layers+1]
-        activations = [NeuralNetwork.sigmoid for x in range(len(weights))]
+        activations = [NeuralNetwork.relu for x in range(len(weights))]
         activations[-1] = NeuralNetwork.out_activation
+        # activations[-1] = NeuralNetwork.sigmoid
         return NeuralNetwork.create(weights, bias, activations)
 
     def save(self, path):
