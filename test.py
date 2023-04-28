@@ -18,5 +18,5 @@ with open('config.yaml', 'r') as stream:
         print(e)
         exit()
 model = NeuralNetwork.load(args.model_path)
-fitness = Fitness(np.random.randint(1000000), config["n_steps"] * 3)
-fitness(model, display=True)
+fitness = Fitness(np.random.randint(1000000), config["n_steps"] * 5)
+print(fitness(model, display=True))

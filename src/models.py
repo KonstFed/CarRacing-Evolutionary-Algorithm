@@ -1,6 +1,6 @@
 from typing import Any
 import numpy as np
-from preprocessing import FrameParser
+from preprocessing import FrameParser, RayFrameParser
 import gymnasium as gym
 import neat
 
@@ -14,16 +14,13 @@ class NeuralNetwork:
         self.bias = []
         self.activations = []
         for i in range(1, len(sizes)):
-            self.weights.append(
-                np.random.normal(
-                    loc=self.weight_mean, scale=self.std, size=(sizes[i], sizes[i - 1])
-                )
-            )
-            self.bias.append(
-                np.random.normal(loc=self.weight_mean, scale=self.std, size=sizes[i])
-            )
-            self.activations.append(NeuralNetwork.sigmoid)
+            self.weights.append(np.random.normal(
+                loc=self.weight_mean, scale=self.std, size=(sizes[i], sizes[i-1])))
+            self.bias.append(np.random.normal(
+                loc=self.weight_mean, scale=self.std, size=sizes[i]))
+            self.activations.append(NeuralNetwork.relu)
         self.activations[-1] = NeuralNetwork.out_activation
+        # self.activations[-1] = NeuralNetwork.sigmoid
 
     def create(weights, bias, activations):
         a = NeuralNetwork(0, 0, [1])
@@ -36,7 +33,8 @@ class NeuralNetwork:
         return NeuralNetwork.create(self.weights, self.bias, self.activations)
 
     def default():
-        return NeuralNetwork(8, 2, [8, 6, 6])
+        return NeuralNetwork(13, 2, [8, 6, 6])
+        # return NeuralNetwork(13, 3, [8, 6, 6])
 
     def relu(x):
         return x * (x > 0)
@@ -78,10 +76,9 @@ class NeuralNetwork:
                     loc=self.weight_mean, scale=self.std, size=1
                 )[0]
 
-                self.weights[layer_i][
-                    weight_i // layer_shape[1], weight_i % layer_shape[1]
-                ] = new_weight
-                self.bias[layer_i][weight_i // layer_shape[1]] = new_bias
+                self.weights[layer_i][weight_i//layer_shape[1],
+                                      weight_i % layer_shape[1]] += new_weight
+                self.bias[layer_i][weight_i//layer_shape[1]] += new_bias
             i += 1
 
     def mutate(self, layer_p: float, n_mutated):
@@ -96,16 +93,16 @@ class NeuralNetwork:
         layer_i = np.random.randint(0, len(new.weights))
         new.weights[layer_i] = np.copy(b.weights[layer_i])
         new.bias[layer_i] = np.copy(b.bias[layer_i])
-        new.mutate(0.3, 2)
         return new
 
     def load(path, n_layers=3):
         container = np.load(path)
         data = [container[x] for x in container]
-        bias = data[n_layers + 1 :]
-        weights = data[: n_layers + 1]
-        activations = [NeuralNetwork.sigmoid for x in range(len(weights))]
+        bias = data[n_layers+1:]
+        weights = data[:n_layers+1]
+        activations = [NeuralNetwork.relu for x in range(len(weights))]
         activations[-1] = NeuralNetwork.out_activation
+        # activations[-1] = NeuralNetwork.sigmoid
         return NeuralNetwork.create(weights, bias, activations)
 
     def save(self, path):
@@ -124,36 +121,48 @@ class NeatModel:
 
 
 class Fitness:
-    def __init__(self, env_seed, n_steps, fp: FrameParser):
+    def __init__(self, env_seed, n_steps, fp: FrameParser, period=3, rot_reduction=0.5):
         self.env_seed = env_seed
         self.n_steps = n_steps
+        self.period = period
+        self.rot_reduction = rot_reduction 
         self.fp = fp
 
     def __call__(self, model, display=False):
         if display:
-            env = gym.make("CarRacing-v2", domain_randomize=False, render_mode="human")
+            env = gym.make("CarRacing-v2", domain_randomize=False, render_mode="human", max_episode_steps=self.n_steps)
         else:
-            env = gym.make("CarRacing-v2", domain_randomize=False)
+            env = gym.make("CarRacing-v2", domain_randomize=False, max_episode_steps=self.n_steps)
 
 
         total_reward = 0
+        count = 0
+        action = None
         observation, info = env.reset(seed=self.env_seed)
         for i in range(self.n_steps):
-            parsed_input = self.fp.process(observation)
-            # on_grass = len(list(filter(lambda x: x == 0, parsed_input[3:])))
-            # total_reward -= on_grass
-            output = model(parsed_input)
-            action = [
-                output[0],
-                output[1] if output[1] > 0 else 0,
-                -output[1] if output[1] < 0 else 0,
-            ]
+            if count % self.period == 0:
+                parsed_input = self.fp.process(observation)
+                output = model(parsed_input)
+                action = [output[0], output[1] if output[1] > 0 else 0, -output[1] if output[1] < 0 else 0]
+                # action = [output[0] * 2 - 1, output[1], output[2]]
+
+                if sum(parsed_input[3:9]) == 0:
+                    total_reward -= 0.3
+
+                # print(parsed_input)
+            else:
+                action = [action[0] * self.rot_reduction, 0, 0]
+            
             observation, reward, terminated, truncated, info = env.step(action)
             total_reward += reward
             total_reward -= abs(action[0]) * action[1]
+
+            count += 1
+
             if terminated or truncated:
                 break
 
         env.close()
 
         return total_reward
+

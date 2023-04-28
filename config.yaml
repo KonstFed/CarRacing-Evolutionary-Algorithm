@@ -1,4 +1,4 @@
 population_size: 10
-n_steps: 300
+n_steps: 700
 number_iterations: 10
 n_processes: 7

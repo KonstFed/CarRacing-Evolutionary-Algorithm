@@ -6,7 +6,7 @@ from tqdm import tqdm
 from multiprocessing import Pool
 
 from src.models import NeuralNetwork
-from src.preprocessing import FrameParser
+from src.preprocessing import RayFrameParser
 
 
 class GeneticAlgorithm:
@@ -24,8 +24,12 @@ class GeneticAlgorithm:
             new.append(cur)
 
         for i in range(0, len(self.population), 2):
-            new.append(self.population[i].cross(self.population[i + 1]))
-            new.append(self.population[i + 1].cross(self.population[i]))
+            offspring1 = self.population[i].cross(self.population[i+1])
+            offspring2 = self.population[i+1].cross(self.population[i])
+            offspring1.mutate(0.3, 2)
+            offspring2.mutate(0.3, 2)
+            new.append(offspring1)
+            new.append(offspring2)
 
         self.population = self.population + new
         self.fitness.env_seed = np.random.randint(1000000)
@@ -62,3 +66,5 @@ class GeneticAlgorithm:
                 print(f"step {i}: {step_execution_time[i]}s.")
                 print(f"fitness: {step_best_finess[i]}.")
         return self.population[0]
+
+
