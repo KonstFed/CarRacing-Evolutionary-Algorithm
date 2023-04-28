@@ -3,24 +3,28 @@ import cv2
 
 
 class FrameParser:
-    def _carCenter(self):
-        """get coordinates of car center
-
-        Returns:
-            np.array: coordinate of center
-        """
-        center = (self.left_upper_corner + self.right_down_corner) // 2
-        return center
+    def __init__(
+        self,
+        road_rgb=[103, 103, 103],
+        ui_angle_corners=np.array([[86, 37], [91, 58]]),
+        ui_speed_corners=np.array([[84, 13], [93, 13]]),
+        ui_rotation_center=np.array([88, 71]),
+    ):
+        self.road_rgb = road_rgb
+        self.ui_angle_corners = ui_angle_corners
+        self.ui_speed_corners = ui_speed_corners
+        self.ui_rotation_center = ui_rotation_center
+        self.ui_rotation_delta = 13
 
     def _binarizeWorld(self, frame):
         """Binarize image by distance to road color.
 
-        Due to simplicity of input image manhattan distance less than 10 from road rgb works perfectly for this task
+        Due to simplicity of input image manhattan distance less than 10 from road rgb works perfectly for this task. Road pixel is 255, others are 0.
         Args:
             frame (np.array): BGR np.array of a frame without UI
 
         Returns:
-            np.array: Binarized image
+            np.array: Binarized image, road pixel is 255 others pixels are 0
         """
         img = np.abs(frame - self.road_rgb)
         img = img.astype(np.uint8)
@@ -133,6 +137,22 @@ class FrameParser:
         raise NotImplementedError()
 
 
+class BinaryFrameParser(FrameParser):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def process(self, frame: np.array):
+        """Returns binarized image w/o UI
+
+        Args:
+            frame (np.array): input frame BGR
+
+        Returns:
+            np.array: 85 x 96 binary image where road is 1, else 0
+        """
+        return self._binarizeWorld(frame[:85,]) / 255
+
+
 class RayFrameParser(FrameParser):
     def __init__(
         self,
@@ -141,7 +161,8 @@ class RayFrameParser(FrameParser):
         ui_angle_corners=np.array([[86, 37], [91, 58]]),
         ui_speed_corners=np.array([[84, 13], [93, 13]]),
         ui_rotation_center=np.array([88, 71]),
-    ) -> None:
+        road_rgb=[103, 103, 103],
+    ):
         """Given class parse frames of Gymnasium CarRacing game using function process
         Args:
             l_u_corner (np.array, optional): pixel coordinates of left upper corner of car. Defaults to np.array([65, 45]).
@@ -149,10 +170,15 @@ class RayFrameParser(FrameParser):
             ui_rotation_corners (np.array, optional): left up and right down corners of rotation bar on UI. Defaults to np.array([[86, 37], [91, 58]]).
             ui_speed_corners (np.array, optional): left up and right down corners of speed bar on UI. Defaults to np.array([[84, 13], [93, 13]]).
         """
+        super().__init__(
+            road_rgb=road_rgb,
+            ui_angle_corners=ui_angle_corners,
+            ui_speed_corners=ui_speed_corners,
+            ui_rotation_center=ui_rotation_center,
+        )
         # all coordinates are stored in format [y, x]
         self.l_u_corner = l_u_corner
         self.r_d_corner = r_d_corner
-        self.road_rgb = [103, 103, 103]
 
         self.s_p_forward1 = np.array(
             [l_u_corner[0], (l_u_corner[1] + r_d_corner[1]) // 2]
@@ -168,11 +194,6 @@ class RayFrameParser(FrameParser):
 
         self.s_p_left_angled = l_u_corner
         self.s_p_right_angled = np.array([l_u_corner[0], r_d_corner[1]])
-
-        self.ui_angle_corners = ui_angle_corners
-        self.ui_speed_corners = ui_speed_corners
-        self.ui_rotation_center = ui_rotation_center
-        self.ui_rotation_delta = 13
 
     def _ray(
         self,

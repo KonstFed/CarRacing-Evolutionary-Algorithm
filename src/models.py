@@ -1,8 +1,11 @@
+from typing import Any
 import numpy as np
+from preprocessing import FrameParser
+import gymnasium as gym
+import neat
 
 
-class NeuralNetwork():
-
+class NeuralNetwork:
     def __init__(self, n_input, n_output, hidden_sizes):
         sizes = [n_input] + hidden_sizes + [n_output]
         self.weight_mean = 0
@@ -11,10 +14,14 @@ class NeuralNetwork():
         self.bias = []
         self.activations = []
         for i in range(1, len(sizes)):
-            self.weights.append(np.random.normal(
-                loc=self.weight_mean, scale=self.std, size=(sizes[i], sizes[i-1])))
-            self.bias.append(np.random.normal(
-                loc=self.weight_mean, scale=self.std, size=sizes[i]))
+            self.weights.append(
+                np.random.normal(
+                    loc=self.weight_mean, scale=self.std, size=(sizes[i], sizes[i - 1])
+                )
+            )
+            self.bias.append(
+                np.random.normal(loc=self.weight_mean, scale=self.std, size=sizes[i])
+            )
             self.activations.append(NeuralNetwork.sigmoid)
         self.activations[-1] = NeuralNetwork.out_activation
 
@@ -33,16 +40,19 @@ class NeuralNetwork():
 
     def relu(x):
         return x * (x > 0)
-    
+
     def sigmoid(x):
         return 1 / (1 + np.exp(-x))
-    
+
     def out_activation(x):
         x = NeuralNetwork.sigmoid(x)
         return x * 2 - 1
 
     def linear(x):
         return x
+
+    def __call__(self, x) -> Any:
+        return self.forward(x)
 
     def forward(self, x: np.array):
         out = np.copy(x)
@@ -62,13 +72,16 @@ class NeuralNetwork():
             if weight_i not in mutated:
                 mutated.append(weight_i)
                 new_weight = np.random.normal(
-                    loc=self.weight_mean, scale=self.std, size=1)[0]
+                    loc=self.weight_mean, scale=self.std, size=1
+                )[0]
                 new_bias = np.random.normal(
-                    loc=self.weight_mean, scale=self.std, size=1)[0]
+                    loc=self.weight_mean, scale=self.std, size=1
+                )[0]
 
-                self.weights[layer_i][weight_i//layer_shape[1],
-                                      weight_i % layer_shape[1]] = new_weight
-                self.bias[layer_i][weight_i//layer_shape[1]] = new_bias
+                self.weights[layer_i][
+                    weight_i // layer_shape[1], weight_i % layer_shape[1]
+                ] = new_weight
+                self.bias[layer_i][weight_i // layer_shape[1]] = new_bias
             i += 1
 
     def mutate(self, layer_p: float, n_mutated):
@@ -89,8 +102,8 @@ class NeuralNetwork():
     def load(path, n_layers=3):
         container = np.load(path)
         data = [container[x] for x in container]
-        bias = data[n_layers+1:]
-        weights = data[:n_layers+1]
+        bias = data[n_layers + 1 :]
+        weights = data[: n_layers + 1]
         activations = [NeuralNetwork.sigmoid for x in range(len(weights))]
         activations[-1] = NeuralNetwork.out_activation
         return NeuralNetwork.create(weights, bias, activations)
@@ -98,3 +111,49 @@ class NeuralNetwork():
     def save(self, path):
         data = self.weights + [x for x in self.bias]
         np.savez(path, *data)
+
+
+class NeatModel:
+    def __init__(self, genome_id: int, genome, config: neat.Config):
+        self.config = config
+        self.genome = genome
+        self.net = neat.nn.FeedForwardNetwork.create(genome, config)
+
+    def __call__(self, x) -> Any:
+        self.net.activate(x)
+
+
+class Fitness:
+    def __init__(self, env_seed, n_steps, fp: FrameParser):
+        self.env_seed = env_seed
+        self.n_steps = n_steps
+        self.fp = fp
+
+    def __call__(self, model, display=False):
+        if display:
+            env = gym.make("CarRacing-v2", domain_randomize=False, render_mode="human")
+        else:
+            env = gym.make("CarRacing-v2", domain_randomize=False)
+
+
+        total_reward = 0
+        observation, info = env.reset(seed=self.env_seed)
+        for i in range(self.n_steps):
+            parsed_input = self.fp.process(observation)
+            # on_grass = len(list(filter(lambda x: x == 0, parsed_input[3:])))
+            # total_reward -= on_grass
+            output = model(parsed_input)
+            action = [
+                output[0],
+                output[1] if output[1] > 0 else 0,
+                -output[1] if output[1] < 0 else 0,
+            ]
+            observation, reward, terminated, truncated, info = env.step(action)
+            total_reward += reward
+            total_reward -= abs(action[0]) * action[1]
+            if terminated or truncated:
+                break
+
+        env.close()
+
+        return total_reward
