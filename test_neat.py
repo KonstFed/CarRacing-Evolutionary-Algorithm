@@ -4,8 +4,8 @@ from random import randint
 
 import neat
 
-from models import NeatModel, Fitness
-from preprocessing import BinaryFrameParser, RayFrameParser
+from src.models import NeatModel, Fitness
+from src.preprocessing import BinaryFrameParser, RayFrameParser
 
 local_dir = os.path.dirname(__file__)
 config_path = os.path.join(local_dir, 'neat_config')

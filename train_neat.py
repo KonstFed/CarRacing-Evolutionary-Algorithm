@@ -9,8 +9,8 @@ from random import randint
 
 import neat
 
-from models import Fitness, NeatModel
-from preprocessing import BinaryFrameParser, RayFrameParser
+from src.models import Fitness, NeatModel
+from src.preprocessing import BinaryFrameParser, RayFrameParser
 
 
 n_steps = 700
