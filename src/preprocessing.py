@@ -275,7 +275,7 @@ class RayFrameParser(FrameParser):
             frame (np.array): observation frame 96 x 96 RGB image.
 
         Returns:
-            List[int]: in format of [speed, rotation, forward ray grass, left side ray grass, right side ray grass, 45 left ray grass, 45 right ray grass, forward ray road, left side ray road, right side ray road, 45 left ray road, 45 right ray road]
+            List[int]: in format of [speed, angle, rotation, forward ray grass, left side ray grass, right side ray grass, 45 left ray grass, 45 right ray grass, forward ray road, left side ray road, right side ray road, 45 left ray road, 45 right ray road]
         """
         world_frame = frame[:85,]  # remove bottom control panel
         binary = self._binarizeWorld(world_frame)

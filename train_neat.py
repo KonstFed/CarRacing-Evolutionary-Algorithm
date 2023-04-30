@@ -11,7 +11,7 @@ import neat
 
 from src.models import Fitness, NeatModel
 from src.preprocessing import BinaryFrameParser, RayFrameParser
-
+import visualize
 
 n_steps = 700
 
@@ -26,7 +26,7 @@ def eval_genomes(genomes, config):
 
 
 def save(genome):
-    with open("best_models/neat/winner.pkl", "wb") as f:
+    with open("best_models/winner.pkl", "wb") as f:
         pickle.dump(genome, f)
         f.close()
 
@@ -46,13 +46,33 @@ def run(config_file):
 
     # Add a stdout reporter to show progress in the terminal.
     p.add_reporter(neat.StdOutReporter(True))
-    # stats = neat.StatisticsReporter()
-    # p.add_reporter(stats)
-    # p.add_reporter(neat.Checkpointer(5, filename_prefix="neat_logs/checkpoints/neat-checkpoint-"))
-
+    stats = neat.StatisticsReporter()
+    p.add_reporter(stats)
+    p.add_reporter(
+        neat.Checkpointer(5, filename_prefix="neat_logs/checkpoints/neat-checkpoint-")
+    )
+    # node_names = {-1}
     # Run for up to 300 generations.
-    winner = p.run(eval_genomes, 20)
+    winner = p.run(eval_genomes, 1)
     save(winner)
+    node_names = {
+        -1: "speed",
+        -2: "angle",
+        -3: "rotation",
+        -4: "gr_forward",
+        -5: "gr_left_side",
+        -6: "gr_right_side",
+        -7: "gr_left_45",
+        -8: "gr_right_45",
+        -9: "rd_forward",
+        -10: "rd_left_side",
+        -11: "rd_right_side",
+        -12: "rd_left_45",
+        -13: "rd_right_45",
+        0: "steer",
+        1: "gas/break"
+    }
+    visualize.draw_net(config, winner, False,node_names=node_names, filename="neat_logs/neat_stats/net.gv")
 
 
 if __name__ == "__main__":
