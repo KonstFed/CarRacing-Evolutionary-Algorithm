@@ -151,7 +151,6 @@ class Fitness:
             
             observation, reward, terminated, truncated, info = env.step(action)
             total_reward += reward
-            total_reward -= abs(action[0]) * action[1]
 
             if reward < 0:
                 stagnation_count += 1
