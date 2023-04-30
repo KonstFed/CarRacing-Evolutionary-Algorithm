@@ -1,6 +1,6 @@
 from typing import Any
 import numpy as np
-from preprocessing import FrameParser, RayFrameParser
+from src.preprocessing import FrameParser, RayFrameParser
 import gymnasium as gym
 import neat
 
@@ -34,7 +34,6 @@ class NeuralNetwork:
 
     def default():
         return NeuralNetwork(13, 2, [8, 6, 6])
-        # return NeuralNetwork(13, 3, [8, 6, 6])
 
     def relu(x):
         return x * (x > 0)
@@ -102,7 +101,6 @@ class NeuralNetwork:
         weights = data[:n_layers+1]
         activations = [NeuralNetwork.relu for x in range(len(weights))]
         activations[-1] = NeuralNetwork.out_activation
-        # activations[-1] = NeuralNetwork.sigmoid
         return NeuralNetwork.create(weights, bias, activations)
 
     def save(self, path):
@@ -123,12 +121,13 @@ class NeatModel:
 
 
 class Fitness:
-    def __init__(self, env_seed, n_steps, fp: FrameParser, period=3, rot_reduction=0.5):
+    def __init__(self, env_seed, n_steps, fp: FrameParser, period=3, rot_reduction=0.5, stagnation_limit=50):
         self.env_seed = env_seed
         self.n_steps = n_steps
         self.period = period
         self.rot_reduction = rot_reduction 
         self.fp = fp
+        self.stagnation_limit = stagnation_limit
 
     def __call__(self, model, display=False):
         if display:
@@ -139,6 +138,7 @@ class Fitness:
 
         total_reward = 0
         count = 0
+        stagnation_count = 0
         action = None
         observation, info = env.reset(seed=self.env_seed)
         for i in range(self.n_steps):
@@ -146,18 +146,19 @@ class Fitness:
                 parsed_input = self.fp.process(observation)
                 output = model(parsed_input)
                 action = [output[0], output[1] if output[1] > 0 else 0, -output[1] if output[1] < 0 else 0]
-                # action = [output[0] * 2 - 1, output[1], output[2]]
-
-                # if sum(parsed_input[3:9]) == 0:
-                #     total_reward -= 0.3
-
-                # print(parsed_input)
             else:
                 action = [action[0] * self.rot_reduction, 0, 0]
             
             observation, reward, terminated, truncated, info = env.step(action)
             total_reward += reward
             total_reward -= abs(action[0]) * action[1]
+
+            if reward < 0:
+                stagnation_count += 1
+                if stagnation_count >= self.stagnation_limit:
+                    break
+            else:
+                stagnation_count = 0
 
             count += 1
 
