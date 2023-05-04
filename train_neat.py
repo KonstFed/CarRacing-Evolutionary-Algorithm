@@ -1,8 +1,5 @@
-"""
-2-input XOR example -- this is most likely the simplest possible example.
-"""
-
 import os
+import sys
 import pickle
 from multiprocessing import Pool
 from random import randint
@@ -15,9 +12,12 @@ import visualize
 
 n_steps = 700
 
+parser = None
+
 
 def eval_genomes(genomes, config):
-    fitness = Fitness(randint(0, 1_000_000), n_steps, RayFrameParser())
+    global parser
+    fitness = Fitness(randint(0, 1_000_000), n_steps, parser)
     models = [NeatModel(id, genome, config) for id, genome in genomes]
     p = Pool(10)
     fitness_value = p.map(fitness, models)
@@ -25,13 +25,13 @@ def eval_genomes(genomes, config):
         models[i].genome.fitness = fitness_value[i]
 
 
-def save(genome):
-    with open("best_models/winner.pkl", "wb") as f:
+def save(genome, input_mode: str):
+    with open("best_models/neat/" + input_mode + "_current.pkl", "wb") as f:
         pickle.dump(genome, f)
         f.close()
 
 
-def run(config_file):
+def run(config_file, input_mode: str):
     # Load configuration.
     config = neat.Config(
         neat.DefaultGenome,
@@ -53,8 +53,8 @@ def run(config_file):
     )
     # node_names = {-1}
     # Run for up to 300 generations.
-    winner = p.run(eval_genomes, 1)
-    save(winner)
+    winner = p.run(eval_genomes, 20)
+    save(winner, input_mode)
     node_names = {
         -1: "speed",
         -2: "angle",
@@ -70,15 +70,27 @@ def run(config_file):
         -12: "rd_left_45",
         -13: "rd_right_45",
         0: "steer",
-        1: "gas/break"
+        1: "gas/break",
     }
-    visualize.draw_net(config, winner, False,node_names=node_names, filename="neat_logs/neat_stats/net.gv")
+    visualize.draw_net(
+        config,
+        winner,
+        False,
+        node_names=node_names,
+        filename="neat_logs/neat_stats/net.gv",
+    )
 
 
 if __name__ == "__main__":
     # Determine path to configuration file. This path manipulation is
     # here so that the script will run successfully regardless of the
     # current working directory.
+    parser_config = sys.argv[1]
+    if parser_config == "ray":
+        parser = RayFrameParser()
+    elif parser_config == "binary":
+        parser = BinaryFrameParser()
+
     local_dir = os.path.dirname(__file__)
     config_path = os.path.join(local_dir, "neat_config")
-    run(config_path)
+    run(config_path, parser_config)

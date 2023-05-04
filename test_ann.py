@@ -11,7 +11,7 @@ parser.add_argument("model_path", help="path to model, .npz")
 args = parser.parse_args()
 
 config = {}
-with open('config.yaml', 'r') as stream:
+with open('configs/ann_config.yaml', 'r') as stream:
     try:
         config = yaml.safe_load(stream)
     except yaml.YAMLError as e:

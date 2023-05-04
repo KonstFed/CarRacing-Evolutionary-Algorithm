@@ -1,6 +1,9 @@
 # CarRacing-v2
 Practice project based on [gymnasium](https://gymnasium.farama.org/) [CarRacing-v2](https://gymnasium.farama.org/environments/box2d/car_racing) environment.
 
+# Requirements
+graphviz
+
 # Test model
 You can test model by running `test.py` and providing path to save model.
 

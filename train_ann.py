@@ -11,7 +11,7 @@ if __name__ == "__main__":
     parser.add_argument("output_file", help="Where to save best model, .npz file")
     args = parser.parse_args()
     config = {}
-    with open('config.yaml', 'r') as stream:
+    with open('configs/ann_config.yaml', 'r') as stream:
         try:
             config = yaml.safe_load(stream)
         except yaml.YAMLError as e:

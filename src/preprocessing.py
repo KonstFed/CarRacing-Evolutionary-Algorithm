@@ -138,8 +138,9 @@ class FrameParser:
 
 
 class BinaryFrameParser(FrameParser):
-    def __init__(self) -> None:
+    def __init__(self, crop_factor = 2) -> None:
         super().__init__()
+        self.crop_factor = crop_factor
 
     def process(self, frame: np.array):
         """Returns binarized image w/o UI
@@ -150,7 +151,11 @@ class BinaryFrameParser(FrameParser):
         Returns:
             np.array: 85 x 96 binary image where road is 1, else 0
         """
-        return self._binarizeWorld(frame[:85,]) / 255
+        binary = self._binarizeWorld(frame)
+        size = binary.shape[0] # 96 = 48 * 2 = 24 * 4
+        binary = binary[size//4:, size - size//4] # 48 x 48
+        binary = cv2.resize(binary, (24, 24)) # 24, 24
+        return binary / 255 
 
 
 class RayFrameParser(FrameParser):
