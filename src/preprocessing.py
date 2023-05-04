@@ -151,13 +151,11 @@ class BinaryFrameParser(FrameParser):
         Returns:
             np.array: 85 x 96 binary image where road is 1, else 0
         """
-        self.save(frame, "frame.png")
 
         size = frame.shape[0] # 96 = 48 * 2 = 24 * 4
         frame = frame[size//4:size - size//4, size//4: size - size//4] # 48 x 48
         frame = cv2.resize(frame, (24, 24)) # 24, 24
         binary = self._binarizeWorld(frame)
-        self.save(binary, "binary.png")
         return binary / 255 
 
 
