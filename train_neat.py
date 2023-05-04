@@ -92,5 +92,5 @@ if __name__ == "__main__":
         parser = BinaryFrameParser()
 
     local_dir = os.path.dirname(__file__)
-    config_path = os.path.join(local_dir, "neat_config")
+    config_path = os.path.join(local_dir, "configs/neat_config_" + sys.argv[1])
     run(config_path, parser_config)
