@@ -1,91 +1,85 @@
-# CarRacing-v2
-Practice project based on [gymnasium](https://gymnasium.farama.org/) [CarRacing-v2](https://gymnasium.farama.org/environments/box2d/car_racing) environment.
+# Nature Inspired Computing for Gaming: Evolutionary Neural Network for game AI Algorithm
 
-# Requirements
-graphviz
+Evolutionary Neural Networks are promising method that can make development of game AI much easier. In this repo, we provide code for 2 methods: Fully Connected ANN and NEAT.
 
-# Test model
-You can test model by running `test.py` and providing path to save model.
+# Contents
+- [Problem description](#problem-description)
+    -[Observation space](#observation-space)
+    -[Action space](#action-space)
+- [Installation guide](#installation-guide)
+- [How to run](#how-to-run)
+    - [ANN](#ann)
+    - [NEAT](#neat)
+- [Methodology](#methodology)
+- [Experiments](#experiments)
 
-# Train model
-You can run `test.py` with path to model. `best.npz` is the best obtained model for now.  
+# Problem description
+To test our methods [Car Racing](https://gymnasium.farama.org/environments/box2d/car_racing/) Gymnasium environment was used. In the environment an agent should control racing car and finish track as fast as possible.
 
-# Environment
+## Observation space
 
-Game 'CarRacing-v2' was chosen for task. Game is tuned to be discrete and have same color of environment
+96 by 96 RGB image of game:
 
-## Input space
-![Input frame](https://gymnasium.farama.org/_images/car_racing.gif)
-Image of current frame of game: RGB array (96 x 96 x 3).
-Color of the road, grass and car constant.
-
-`Note`: given gif is human version of input. Real input is more pixelated.
+![](./imgs/frame_upscale.png)
 
 ## Action space
-One single integer value:
-- 0 - do nothing
-- 1 - steer left
-- 2 - steer right
-- 3 - gas
-- 4 - break
+Action space consists of 3 numbers: steering (number from -1, full turn to the left, to 1, full turn to the right), gas (from 0, not accelerate, to 1, full acceleration), and breaking (from 0, no breaking, to 1, full breaking).
 
+# Installation guide
+Python version `3.10.6` was used during development. However, others version may work. Keep in mind that `.pkl` files are version dependent.
 
-## Input processing
-Actual input image
+You can find all needed python packages in [requirements.txt](./requirements.txt). To simply install it you can run:
+```bash
+    pip3 install -r requirements.txt
+```
 
-![](imgs/input.png)
-### **UI**
-In the bottom of the image we have (from left to right):
-- reward (default from *gymnasium*)
-- speed
-- ABS sensors
-- wheel angle
-- gyroscope
+# How to run
 
-In current approach only speed and wheel angle was exctracted using opencv.
+## ANN
+Configs resides at `configs/ann_config.yaml`.
 
-### **Rays**
-Instead of using whole image to pass as input we will use distance from car to not track pixel in some direction.
+Training ANN can be done as:
+```bash
+    python3 train_ann.py 'output_model_path'.npz
+```
 
-To do this, we binarize image using rgb-color of road (*105, 105, 105*). Everything that is close to this color of road is road. This method works pretty well for such simple image. Example:
+You can test model by:
+```bash
+    python3 test_ann.py 'model_path'npz
+```
+To test our best model run:
+```bash
+    python3 test_ann.py best_models/best.npz
+```
 
-![](imgs/binary.png)
+## NEAT
+Confgis of binary and ray preprocessings are at `configs/neat_config_binary` ad `configs/neat_config_ray` respectively.
 
-Then we send rays in direction to compute distance to end of road. Rays directions are forward, left side, right side, left 45 degree, right 45 degree 
-Example:
+To train NEAT model:
+```bash
+    python3 train_neat.py 'output_model_path'.pkl ray|binary
+```
+Example of training ray method:
+```bash
+    python3 train_neat.py current.pkl ray
+```
 
-![](imgs/rays.png)
+To test model simply run:
+```bash
+    python3 test_neat.py `model_path`.pkl ray|binary
+```
+To run best ray preprocessing model:
+```bash
+    python3 test_neat.py best_models/ray_best.plk ray
+```
+To run best binary preprocessing model:
+```bash
+    python3 test_neat.py best_models/binary_best.plk binary
+```
+# Methodology
 
-## Input format
-7 float values:
-- speed
-- wheel rotation
-- forward distance
-- left side distance
-- right side distance
-- left 45 degree distance
-- right 45 degree distance
+To see detailed explanation and analysis see [paper](./paper.pdf).
 
-# Model
+# Experiments
 
-For movement control simple ANN was used:
-- input (7)
-- hidden1 (8 neurons, ReLU)
-- hidden2 (6 neurons, ReLU)
-- hidden3 (6 neurons, Linear)
-- output (5)
-
-To obtain correct weights `Genetic Algorithm` is used.
-
-# Genetic Algorithm
-
-## Fintess function
-Total reward is calculated based on whole race consisting of 300 actions. Every frame reward is increased by `speed - 1`. If car get off track reward is decreased by `10` every frame.
-
-## Mutation
-One layer is choosed to be mutated randomly. Then every layer can mutate with `0.3` probability.
-
-Inside layer we randomly select `3` neurons that we will assign random new weight and bias
-
-## Crossover
-Offspring is a copy of one parent with 1 layer from second parent. Then offspring mutate.
+You can find video of experiments [here](https://www.youtube.com/watch?v=6dMTmt6c7cw&list=PLgk8UCl0Q4KQJYdj-jkraO6LwLWyUwjBO)

@@ -25,13 +25,13 @@ def eval_genomes(genomes, config):
         models[i].genome.fitness = fitness_value[i]
 
 
-def save(genome, input_mode: str):
-    with open("best_models/neat/" + input_mode + "_current.pkl", "wb") as f:
+def save(genome, path: str):
+    with open(path, "wb") as f:
         pickle.dump(genome, f)
         f.close()
 
 
-def run(config_file, input_mode: str):
+def run(config_file, path: str):
     # Load configuration.
     config = neat.Config(
         neat.DefaultGenome,
@@ -53,8 +53,8 @@ def run(config_file, input_mode: str):
     )
     # node_names = {-1}
     # Run for up to 300 generations.
-    winner = p.run(eval_genomes, 20)
-    save(winner, input_mode)
+    winner = p.run(eval_genomes, 1)
+    save(winner, path)
     node_names = {
         -1: "speed",
         -2: "angle",
@@ -85,12 +85,12 @@ if __name__ == "__main__":
     # Determine path to configuration file. This path manipulation is
     # here so that the script will run successfully regardless of the
     # current working directory.
-    parser_config = sys.argv[1]
+    parser_config = sys.argv[2]
     if parser_config == "ray":
         parser = RayFrameParser()
     elif parser_config == "binary":
         parser = BinaryFrameParser()
 
     local_dir = os.path.dirname(__file__)
-    config_path = os.path.join(local_dir, "configs/neat_config_" + sys.argv[1])
-    run(config_path, parser_config)
+    config_path = os.path.join(local_dir, "configs/neat_config_" + parser_config)
+    run(config_path, sys.argv[1])

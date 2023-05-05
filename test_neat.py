@@ -9,20 +9,20 @@ from src.models import NeatModel, Fitness
 from src.preprocessing import BinaryFrameParser, RayFrameParser
 
 
-if sys.argv[1] == "binary":
+if sys.argv[2] == "binary":
     parser = BinaryFrameParser()
 else:
     parser = RayFrameParser()
 
 local_dir = os.path.dirname(__file__)
-config_path = os.path.join(local_dir, 'configs/neat_config_' + sys.argv[1])
+config_path = os.path.join(local_dir, 'configs/neat_config_' + sys.argv[2])
 config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
                         neat.DefaultSpeciesSet, neat.DefaultStagnation,
                         config_path)
 
 
 
-with open("best_models/neat/" + sys.argv[1] + "_current.pkl", "rb") as f:
+with open(sys.argv[1], "rb") as f:
     genome = pickle.load(f)
 
 model = NeatModel(-1, genome, config)
